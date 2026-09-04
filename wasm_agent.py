@@ -12,6 +12,10 @@ There is no shell, no python, no bash: the only way to observe program
 behaviour is to compile Rust to wasm and execute it in wasmtime.
 
 Demo: run with --demo for a self-contained run (no API key needed).
+
+Ref: https://www.monperrus.net/martin/wasm-agent
+
+See also: https://github.com/ASSERT-KTH/wasm-agent (wasmtime embedded)
 """
 
 from __future__ import annotations
