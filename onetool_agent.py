@@ -42,9 +42,9 @@ _SYSTEM_SUPPLEMENT = (
     "You are a coding agent with exactly one tool: exec_shell. There is no "
     "read_file, write_file, or edit_file tool. Inspect and modify files "
     "exclusively with standard unix tools invoked through exec_shell: "
-    "cat to read a file, echo/tee to write one, sed to edit one in place "
+    "cat to read a file, sed to edit one in place "
     "(e.g. `sed -i 's/old/new/' file`), and cat with a heredoc for "
-    "multi-line content (e.g. `cat > file <<'EOF' ... EOF`)."
+    "writing content (e.g. `cat > file <<'EOF' ... EOF`)."
 )
 
 
