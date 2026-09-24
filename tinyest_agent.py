@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
 
 import agentknit
@@ -37,6 +38,32 @@ _TOOLS = [
 
 register_tools_in_library(_TOOLS)
 _TOOL_SCHEMA, _TOOL_DISPATCH = build_tool_spec(_TOOLS)
+
+_CYAN, _BOLD, _DIM, _OFF = "\033[36m", "\033[1m", "\033[2m", "\033[0m"
+
+
+def _make_renderer():
+    """Event renderer for live demos: each shell call is a numbered block
+    showing the exact command as typed, followed by its streamed output."""
+    count = 0
+
+    def render(event_type: str, data: dict) -> None:
+        nonlocal count
+        if event_type == "tool_call" and data.get("name") == "shell":
+            count += 1
+            label = f" shell #{count} "
+            width = shutil.get_terminal_size((80, 20)).columns
+            print(f"\n{_DIM}{_CYAN}━━━{label}{'━' * max(0, width - len(label) - 3)}{_OFF}")
+            lines = str(data.get("args", {}).get("cmd", "")).rstrip("\n").splitlines() or [""]
+            print(f"{_BOLD}{_CYAN}$ {lines[0]}{_OFF}")
+            for line in lines[1:]:
+                print(f"{_BOLD}{_CYAN}  {line}{_OFF}")
+            return
+        if event_type == "tool_result" and data.get("streamed"):
+            return  # the output is already on screen
+        agentknit._core._default_event_handler(event_type, data)
+
+    return render
 
 
 def _build_schema(model: str, endpoint: str) -> dict:
@@ -93,15 +120,15 @@ def main() -> None:
             session_id=args.session,
             strict_cache_proof=False,
         )
+        session["on_event"] = _make_renderer()
         try:
-            result = agentknit._core.run_turn(client, model, session, task)
+            # The final reply is rendered by the session UI ("» ...").
+            agentknit._core.run_turn(client, model, session, task)
         finally:
             agentknit._core._repl_teardown(
                 session, hist_file,
                 agentknit._core._build_resume_cmd(model, session["session_id"], sys.argv[0]),
             )
-        if result.final_reply:
-            print(result.final_reply)
         return
 
     if not sys.stdin.isatty():
