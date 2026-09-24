@@ -16,6 +16,7 @@ This demonstrates the full meta‑tooling / seeding cycle.
 """
 
 import json
+import os
 import textwrap
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -118,9 +119,9 @@ _core_mod._ACTIVE_SESSION = None  # type: ignore[attr-defined]
 _original_run_turn = _core_mod._run_turn
 
 
-def _patched_run_turn(client, model, session, task, cancel=None):
+def _patched_run_turn(client, model, session, task, *args, **kwargs):
     _core_mod._ACTIVE_SESSION = session  # type: ignore[attr-defined]
-    return _original_run_turn(client, model, session, task, cancel=cancel)
+    return _original_run_turn(client, model, session, task, *args, **kwargs)
 
 
 _core_mod._run_turn = _patched_run_turn
@@ -129,9 +130,14 @@ _core_mod._run_turn = _patched_run_turn
 # 3.  Build the seed agent spec — only `create_tool` at the start
 # ──────────────────────────────────────────────────────────────────────────────
 
+_SEED_ENDPOINT = os.environ.get(
+    "SEED_AGENT_ENDPOINT",
+    "run:///home/martin/bin/opencode-free-deepseek-v4-flash-completions.py",
+)
+
 SEED_SPEC = {
-    "model": "run:///home/martin/bin/opencode-free-deepseek-v4-flash-completions.py",
-    "endpoint": "run:///home/martin/bin/opencode-free-deepseek-v4-flash-completions.py",
+    "model": _SEED_ENDPOINT,
+    "endpoint": _SEED_ENDPOINT,
     "status": "ok",
     "behaviour": {"call_delivery_mode": "structured_tool_calls"},
     "auth": "opencode-github-copilot",

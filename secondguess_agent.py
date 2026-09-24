@@ -101,8 +101,8 @@ def t_secondguess_exec(command: str, when: int = 0) -> tuple[str, dict]:
         return r, {"result": r}
 
     # ── proceed with actual execution ────────────────────────────────────
-    # Pass when=0 because we already applied the delay above.
-    return t_execute_async(command, when=0)
+    # No extra delay: we already applied it above.
+    return t_execute_async(command)
 
 
 # ── tool definitions ─────────────────────────────────────────────────────────
