@@ -277,11 +277,10 @@ def main():
         You have only 'create_tool'.  Build whatever tools you need.
     """)
 
-    echo("---" * 24)
-    echo("  TASK")
-    echo("---" * 24)
+    amber, bold, off = "\033[38;5;214m", "\033[1m", "\033[0m"
+    echo(f"{bold}── the prompt ──{off}")
     for line in task.strip().splitlines():
-        echo("   ", line)
+        echo(f"    {amber}{line}{off}")
     echo()
 
     # ── Run the agent ────────────────────────────────────────────────
