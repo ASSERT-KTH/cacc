@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Rollout agent — one step of RL post-training, minus the gradient.
 
-N copies of the blind agent (read/write, no execution) attempt the same task
-in parallel, each in its own copy of the project. The agents never run
-anything; the *harness* then executes the tests on every attempt and turns
-the outcome into a reward: 1 if the tests pass, 0 otherwise.
+N copies of the tinyest agent (one shell tool) attempt the same task in
+parallel, each in its own copy of the project -- the rollouts of agentic RL.
+Once every agent has stopped, the *harness* executes the tests on each final
+state and turns the outcome into a reward: 1 if the tests pass, 0 otherwise.
 
 That reward vector is exactly what RL post-training (RLVR) feeds back into
 the weights. Here it is only printed.
@@ -27,13 +27,13 @@ BOLD, DIM, GREEN, RED, OFF = "\033[1m", "\033[2m", "\033[32m", "\033[31m", "\033
 
 
 def rollout(i: int, project: Path, model: str, task: str, test: str) -> dict:
-    """Run one blind-agent attempt in a fresh copy, then score it by execution."""
+    """Run one agent attempt in a fresh copy, then score it by execution."""
     work = Path(tempfile.mkdtemp(prefix=f"rollout-{i}-"))
     shutil.copytree(project, work, dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"))
     before = {p: p.read_text() for p in work.glob("*.py")}
     agent = subprocess.run(
-        [sys.executable, str(HERE / "blind_agent.py"), model, task],
+        [sys.executable, str(HERE / "tinyest_agent.py"), "--non-interactive", model, task],
         cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL,
     )
     tests = subprocess.run(test, shell=True, cwd=work, capture_output=True, text=True)
@@ -48,7 +48,7 @@ def rollout(i: int, project: Path, model: str, task: str, test: str) -> dict:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Rollout agent: N blind attempts, rewarded by execution.")
+    p = argparse.ArgumentParser(description="Rollout agent: N agent attempts, rewarded by execution.")
     p.add_argument("project", type=Path)
     p.add_argument("-n", type=int, default=4, help="number of rollouts (default 4)")
     p.add_argument("--model", default="run:///home/martin/bin/best-effort-completions.py")
@@ -56,7 +56,7 @@ def main() -> None:
     p.add_argument("--test", default="python3 -m pytest -q -p no:cacheprovider")
     args = p.parse_args()
 
-    print(f"{BOLD}{args.n} rollouts in parallel, no execution allowed to the agents...{OFF}")
+    print(f"{BOLD}{args.n} rollouts in parallel, each agent with a shell...{OFF}")
     with ThreadPoolExecutor(max_workers=args.n) as pool:
         results = list(pool.map(
             lambda i: rollout(i, args.project.resolve(), args.model, args.task, args.test),
