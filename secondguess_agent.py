@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import queue
 import select
 import sys
@@ -105,6 +106,15 @@ def t_secondguess_exec(command: str, when: int = 0) -> tuple[str, dict]:
     return t_execute_async(command)
 
 
+def t_read_or_list(path: str) -> tuple[str, dict]:
+    """Read a file; for a directory, return its listing instead of an error."""
+    if os.path.isdir(path):
+        names = sorted(n + ("/" if os.path.isdir(os.path.join(path, n)) else "")
+                       for n in os.listdir(path) if not n.startswith("."))
+        return "\n".join(names), {"result": "ok"}
+    return t_read(path)
+
+
 # ── tool definitions ─────────────────────────────────────────────────────────
 _TOOLS = [
     Tool(
@@ -155,8 +165,8 @@ _TOOLS = [
     ),
     Tool(
         "read_file",
-        "Read the contents of a local file.",
-        t_read,
+        "Read the contents of a local file (or list a directory).",
+        t_read_or_list,
         parameters={
             "type": "object",
             "properties": {
@@ -199,6 +209,7 @@ _TOOLS = [
             },
             "required": ["path", "old_str", "new_str"],
         },
+        param_map={"old_str": "old", "new_str": "new"},
     ),
 ]
 
